@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend1:
+    build: ./App
+    container_name: backend1
+    environment:
+      - SERVER_NAME=Server-So-1
+
+  backend2:
+    build: ./App
+    container_name: backend2
+    environment:
+      - SERVER_NAME=Server-So-2
+
+  backend3:
+    build: ./App
+    container_name: backend3
+    environment:
+      - SERVER_NAME=Server-So-3
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx-lb
+    ports:
+      - "80:80"   # Mở cổng 80 ra ngoài máy thật
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
