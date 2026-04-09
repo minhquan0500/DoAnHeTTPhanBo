@@ -36,7 +36,12 @@ async def heavy_task():
     start_time = time.time()
     REQUEST_COUNT.labels(method='GET', endpoint='/heavy', server=SERVER_NAME).inc()
 
-   
+    # Cách 1: Mô phỏng I/O bound (server "rảnh" nhưng phản hồi lâu)
+    # wait_time = random.uniform(0.5, 2.0) # ngủ từ 0.5 đến 2 giây
+    # await asyncio.sleep(wait_time)
+
+    # Cách 2: Mô phỏng CPU bound (server thực sự bận) - TỐT HƠN cho test Least Conn
+    # Tính toán một số lớn
     count = 0
     for i in range(10_000_000): # Điều chỉnh số này tùy sức mạnh máy test
         count += i

@@ -1,32 +1,82 @@
-version: '3.8'
+networks:
+  lb_network:
+    driver: bridge
 
 services:
+  # --- Backends ---
   backend1:
-    build: ./App
+    build: ./app
     container_name: backend1
     environment:
-      - SERVER_NAME=Server-So-1
+      - SERVER_NAME=backend-1
+    networks:
+      - lb_network
+    restart: always
 
   backend2:
-    build: ./App
+    build: ./app
     container_name: backend2
     environment:
-      - SERVER_NAME=Server-So-2
+      - SERVER_NAME=backend-2
+    networks:
+      - lb_network
+    restart: always
 
   backend3:
-    build: ./App
+    build: ./app
     container_name: backend3
     environment:
-      - SERVER_NAME=Server-So-3
+      - SERVER_NAME=backend-3
+    networks:
+      - lb_network
+    restart: always
 
+  # --- Load Balancer (NGINX) ---
   nginx:
     image: nginx:latest
     container_name: nginx-lb
     ports:
-      - "80:80"   # Mở cổng 80 ra ngoài máy thật
+      - "80:80"     # Traffic port
+      - "8080:8080" # Status port
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend1
       - backend2
       - backend3
+    networks:
+      - lb_network
+    restart: always
+
+  # --- Monitoring helpers ---
+  # Exporter để convert NGINX stub_status thành format Prometheus
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: nginx-exporter
+    command: -nginx.scrape-uri=http://nginx:8080/nginx_status
+    ports:
+      - "9113:9113"
+    depends_on:
+      - nginx
+    networks:
+      - lb_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - lb_network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Pass mặc định
+    networks:
+      - lb_network
