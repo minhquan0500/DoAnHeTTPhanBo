@@ -1,0 +1,11 @@
+groups:
+  - name: backend_status
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend_servers"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "Máy chủ {{ $labels.instance }} ngừng hoạt động"
+          description: "Node {{ $labels.server }} đã mất kết nối hơn 30 giây."

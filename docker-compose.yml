@@ -48,8 +48,6 @@ services:
       - lb_network
     restart: always
 
-  # --- Monitoring helpers ---
-  # Exporter để convert NGINX stub_status thành format Prometheus
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: nginx-exporter
@@ -66,6 +64,7 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
     ports:
       - "9090:9090"
     networks:
@@ -77,6 +76,18 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin # Pass mặc định
+      - GF_SECURITY_ADMIN_PASSWORD=admin 
+    networks:
+      - lb_network
+ 
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    ports:
+      - "9093:9093"
     networks:
       - lb_network
